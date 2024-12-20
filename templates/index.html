@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Disease Prediction</title>
+    <!-- Link to Bootstrap for quick and responsive UI design -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <!-- Custom Styles for the Page -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            padding-top: 50px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 30px;
+        }
+
+        .form-group label {
+            font-weight: bold;
+        }
+
+        .form-group input {
+            border-radius: 5px;
+        }
+
+        #result {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Heart Disease Prediction</h1>
+    <form id="predictionForm">
+        <div class="form-group">
+            <label for="age">Age:</label>
+            <input type="number" class="form-control" id="age" name="age" required>
+        </div>
+        <div class="form-group">
+            <label for="sex">Sex (1 = Male, 0 = Female):</label>
+            <input type="number" class="form-control" id="sex" name="sex" required>
+        </div>
+        <div class="form-group">
+            <label for="cp">Chest Pain Type (0-3):</label>
+            <input type="number" class="form-control" id="cp" name="cp" required>
+        </div>
+        <div class="form-group">
+            <label for="trestbps">Resting Blood Pressure:</label>
+            <input type="number" class="form-control" id="trestbps" name="trestbps" required>
+        </div>
+        <div class="form-group">
+            <label for="chol">Cholesterol Level:</label>
+            <input type="number" class="form-control" id="chol" name="chol" required>
+        </div>
+        <div class="form-group">
+            <label for="fbs">Fasting Blood Sugar (1 = True, 0 = False):</label>
+            <input type="number" class="form-control" id="fbs" name="fbs" required>
+        </div>
+        <div class="form-group">
+            <label for="restecg">Resting Electrocardiographic Results (0-2):</label>
+            <input type="number" class="form-control" id="restecg" name="restecg" required>
+        </div>
+        <div class="form-group">
+            <label for="thalach">Maximum Heart Rate Achieved:</label>
+            <input type="number" class="form-control" id="thalach" name="thalach" required>
+        </div>
+        <div class="form-group">
+            <label for="exang">Exercise Induced Angina (1 = Yes, 0 = No):</label>
+            <input type="number" class="form-control" id="exang" name="exang" required>
+        </div>
+        <div class="form-group">
+            <label for="oldpeak">Oldpeak (Depression Induced by Exercise):</label>
+            <input type="number" class="form-control" id="oldpeak" name="oldpeak" required>
+        </div>
+        <div class="form-group">
+            <label for="slope">Slope of the Peak Exercise ST Segment (0-2):</label>
+            <input type="number" class="form-control" id="slope" name="slope" required>
+        </div>
+        <div class="form-group">
+            <label for="ca">Number of Major Vessels (0-3):</label>
+            <input type="number" class="form-control" id="ca" name="ca" required>
+        </div>
+        <div class="form-group">
+            <label for="thal">Thalassemia (1 = Normal, 2 = Fixed Defect, 3 = Reversible Defect):</label>
+            <input type="number" class="form-control" id="thal" name="thal" required>
+        </div>
+        <button type="submit" class="btn btn-success btn-block">Predict</button>
+    </form>
+
+    <!-- Spinner to show while waiting for the result -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <i class="fas fa-spinner fa-spin fa-3x"></i>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<!-- Bootstrap and custom JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('predictionForm').addEventListener('submit', async (event) => {
+        event.preventDefault();  // Prevent the form from refreshing the page
+        
+        // Show the loading spinner while waiting for the prediction
+        document.getElementById('loadingSpinner').style.display = 'block';
+
+        const formData = new FormData(event.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // Convert all data to numbers
+        Object.keys(data).forEach(key => {
+            data[key] = Number(data[key]);
+        });
+
+        try {
+            // Send data to the Flask backend for prediction
+            const response = await fetch('http://127.0.0.1:5000/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+
+            // Hide the spinner and display the result
+            document.getElementById('loadingSpinner').style.display = 'none';
+
+            document.getElementById('result').textContent =
+                result.prediction === 1 ? 'Prediction: Heart Disease' : 'Prediction: No Heart Disease';
+            document.getElementById('result').style.color = result.prediction === 1 ? 'red' : 'green';
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('result').textContent = 'An error occurred. Please try again.';
+            document.getElementById('result').style.color = 'red';
+        }
+    });
+</script>
+</body>
+</html>
